@@ -1,0 +1,273 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  auditEvents AuditEvent[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+enum LocationType {
+  HOME_LAB
+  CLOUD
+  REMOTE_SITE
+  OTHER
+}
+
+model Location {
+  id          String       @id @default(cuid())
+  name        String
+  type        LocationType
+  description String?      @db.Text
+  city        String?
+  provider    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  archivedAt  DateTime?
+
+  systems System[]
+
+  @@map("locations")
+}
+
+enum SystemType {
+  PHYSICAL_SERVER
+  PROXMOX_HOST
+  VPS
+  VIRTUAL_MACHINE
+  CONTAINER
+  NAS
+  STORAGE
+  NETWORK_DEVICE
+  NETWORK_CONNECTION
+  APPLICATION
+  WEBSITE
+  DATABASE
+  SERVICE
+  SECURITY_SERVICE
+  BLOCKCHAIN_NODE
+  OTHER
+}
+
+enum SystemStatus {
+  ONLINE
+  OFFLINE
+  WARNING
+  MAINTENANCE
+  UNKNOWN
+  RETIRED
+}
+
+enum Criticality {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Environment {
+  PRODUCTION
+  STAGING
+  DEVELOPMENT
+  LAB
+}
+
+model System {
+  id                  String       @id @default(cuid())
+  name                String
+  slug                String       @unique
+  type                SystemType
+  status              SystemStatus @default(UNKNOWN)
+  criticality         Criticality
+  environment         Environment
+  description         String?      @db.Text
+  hostname            String?
+  privateIp           String?
+  publicIp            String?
+  operatingSystem     String?
+  platformVersion     String?
+  vmContainerId       String?
+  cpuAllocation       Int?
+  memoryAllocation    Int?
+  storageAllocation   Int?
+  accessMethod        String?
+  credentialReference String?
+  owner               String?
+  tags                String[]
+  notes               String?      @db.Text
+  lastVerifiedAt      DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  archivedAt          DateTime?
+
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
+
+  parentSystemId String?
+  parentSystem   System?  @relation("SystemHierarchy", fields: [parentSystemId], references: [id])
+  childSystems   System[] @relation("SystemHierarchy")
+
+  dependenciesFrom Dependency[] @relation("DependencySource")
+  dependenciesTo   Dependency[] @relation("DependencyTarget")
+  endpoints        Endpoint[]
+  auditEvents      AuditEvent[]
+
+  @@index([locationId])
+  @@index([parentSystemId])
+  @@index([type])
+  @@index([status])
+  @@index([criticality])
+  @@index([environment])
+  @@map("systems")
+}
+
+enum DependencyType {
+  DEPENDS_ON
+  CONNECTS_TO
+  STORES_DATA_ON
+  ROUTED_THROUGH
+  MONITORED_BY
+  BACKED_UP_TO
+  PROVIDES_SERVICE_TO
+}
+
+model Dependency {
+  id          String         @id @default(cuid())
+  type        DependencyType
+  description String?        @db.Text
+  createdAt   DateTime       @default(now())
+
+  sourceSystemId String
+  sourceSystem   System @relation("DependencySource", fields: [sourceSystemId], references: [id], onDelete: Cascade)
+
+  targetSystemId String
+  targetSystem   System @relation("DependencyTarget", fields: [targetSystemId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceSystemId, targetSystemId, type])
+  @@index([sourceSystemId])
+  @@index([targetSystemId])
+  @@map("dependencies")
+}
+
+enum EndpointType {
+  URL
+  API
+  SSH
+  MANAGEMENT
+  DATABASE
+  RPC
+  OTHER
+}
+
+model Endpoint {
+  id        String       @id @default(cuid())
+  name      String
+  type      EndpointType
+  address   String
+  port      Int?
+  protocol  String?
+  isPublic  Boolean      @default(false)
+  notes     String?      @db.Text
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  systemId String
+  system   System @relation(fields: [systemId], references: [id], onDelete: Cascade)
+
+  @@index([systemId])
+  @@map("endpoints")
+}
+
+enum AuditAction {
+  SYSTEM_CREATED
+  SYSTEM_UPDATED
+  SYSTEM_ARCHIVED
+  SYSTEM_PARENT_CHANGED
+  DEPENDENCY_CREATED
+  DEPENDENCY_REMOVED
+  ENDPOINT_CREATED
+  ENDPOINT_UPDATED
+  ENDPOINT_REMOVED
+  LOCATION_CREATED
+  LOCATION_UPDATED
+  LOCATION_ARCHIVED
+}
+
+model AuditEvent {
+  id        String      @id @default(cuid())
+  action    AuditAction
+  entityId  String
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  systemId String?
+  system   System? @relation(fields: [systemId], references: [id])
+
+  @@index([entityId])
+  @@index([action])
+  @@index([userId])
+  @@index([systemId])
+  @@index([createdAt])
+  @@map("audit_events")
+}

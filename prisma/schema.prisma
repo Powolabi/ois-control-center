@@ -22,6 +22,7 @@ model User {
   accounts    Account[]
   sessions    Session[]
   auditEvents AuditEvent[]
+  importRuns  ImportRun[]
 
   @@map("users")
 }
@@ -165,10 +166,11 @@ model System {
   parentSystem   System?  @relation("SystemHierarchy", fields: [parentSystemId], references: [id])
   childSystems   System[] @relation("SystemHierarchy")
 
-  dependenciesFrom Dependency[] @relation("DependencySource")
-  dependenciesTo   Dependency[] @relation("DependencyTarget")
+  dependenciesFrom Dependency[]              @relation("DependencySource")
+  dependenciesTo   Dependency[]              @relation("DependencyTarget")
   endpoints        Endpoint[]
   auditEvents      AuditEvent[]
+  externalMappings ExternalResourceMapping[]
 
   @@index([locationId])
   @@index([parentSystemId])
@@ -249,6 +251,14 @@ enum AuditAction {
   LOCATION_CREATED
   LOCATION_UPDATED
   LOCATION_ARCHIVED
+  IMPORT_STARTED
+  IMPORT_PREVIEW_GENERATED
+  IMPORT_COMPLETED
+  IMPORT_FAILED
+  IMPORT_SYSTEM_CREATED
+  IMPORT_SYSTEM_UPDATED
+  IMPORT_MAPPING_CREATED
+  IMPORT_CONFLICT_RESOLVED
 }
 
 model AuditEvent {
@@ -270,4 +280,90 @@ model AuditEvent {
   @@index([systemId])
   @@index([createdAt])
   @@map("audit_events")
+}
+
+enum ImportSourceType {
+  PROXMOX
+}
+
+model ImportSource {
+  id                   String           @id @default(cuid())
+  name                 String
+  type                 ImportSourceType
+  sourceIdentifier     String
+  lastSuccessfulImport DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  externalMappings ExternalResourceMapping[]
+  importRuns       ImportRun[]
+
+  @@unique([type, sourceIdentifier])
+  @@index([type])
+  @@map("import_sources")
+}
+
+enum ExternalResourceType {
+  PROXMOX_NODE
+  PROXMOX_VM
+  PROXMOX_CONTAINER
+  PROXMOX_STORAGE
+}
+
+model ExternalResourceMapping {
+  id                 String               @id @default(cuid())
+  externalResourceId String
+  externalType       ExternalResourceType
+  lastSeenAt         DateTime
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  importSourceId String
+  importSource   ImportSource @relation(fields: [importSourceId], references: [id], onDelete: Cascade)
+
+  systemId String
+  system   System @relation(fields: [systemId], references: [id], onDelete: Cascade)
+
+  @@unique([importSourceId, externalResourceId])
+  @@index([importSourceId])
+  @@index([systemId])
+  @@index([externalResourceId])
+  @@map("external_resource_mappings")
+}
+
+enum ImportStatus {
+  PREVIEWED
+  COMPLETED
+  COMPLETED_WITH_WARNINGS
+  FAILED
+  CANCELLED
+}
+
+model ImportRun {
+  id             String       @id @default(cuid())
+  schemaVersion  String
+  generatedAt    DateTime
+  status         ImportStatus
+  totalResources Int
+  newCount       Int          @default(0)
+  updatedCount   Int          @default(0)
+  unchangedCount Int          @default(0)
+  missingCount   Int          @default(0)
+  conflictCount  Int          @default(0)
+  warningCount   Int          @default(0)
+  errorSummary   String?      @db.Text
+  startedAt      DateTime     @default(now())
+  completedAt    DateTime?
+
+  importSourceId String
+  importSource   ImportSource @relation(fields: [importSourceId], references: [id], onDelete: Cascade)
+
+  initiatedBy String
+  user        User   @relation(fields: [initiatedBy], references: [id])
+
+  @@index([importSourceId])
+  @@index([initiatedBy])
+  @@index([status])
+  @@index([startedAt])
+  @@map("import_runs")
 }

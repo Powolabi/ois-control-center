@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth"
+import Link from "next/link"
 
 export const dynamic = 'force-dynamic'
 
@@ -48,11 +49,31 @@ export default async function SettingsPage() {
       </div>
 
       <div className="rounded-lg border border-slate-800 bg-slate-900 p-6">
-        <h2 className="mb-4 text-lg font-semibold text-white">Phase 1 Scope</h2>
-        <p className="text-sm text-slate-400">
-          This version includes system inventory, location management, and dependency tracking.
-          Future phases will add Proxmox integration, monitoring, and automation capabilities.
-        </p>
+        <h2 className="mb-4 text-lg font-semibold text-white">Integrations</h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium text-white">Proxmox Import</h3>
+              <p className="text-sm text-slate-400">
+                Import infrastructure inventory from Proxmox VE clusters
+              </p>
+            </div>
+            <Link
+              href="/dashboard/settings/imports/proxmox/new"
+              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Import
+            </Link>
+          </div>
+          <div className="mt-4">
+            <Link
+              href="/dashboard/settings/imports"
+              className="text-sm text-blue-400 hover:text-blue-300"
+            >
+              View Import History →
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   )

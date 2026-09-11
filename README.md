@@ -429,7 +429,37 @@ Internal project. Follow standard Git flow:
 4. Create pull request
 5. Request review from team lead
 
+## Proxmox Integration
+
+The OIS Control Center includes a safe Proxmox inventory import integration that allows you to import infrastructure data from Proxmox VE clusters.
+
+**Key Features:**
+- File-based import (no direct Proxmox connection required)
+- Preview changes before importing
+- Conflict detection and resolution
+- Field ownership protection (manual data is preserved)
+- Import history and audit trail
+- Automatic parent-child relationship establishment
+
+**Documentation:**
+- See [docs/PROXMOX_IMPORT.md](docs/PROXMOX_IMPORT.md) for complete import guide
+- Collector tool: `tools/proxmox-inventory/`
+
+**Quick Start:**
+1. Generate export: `cd tools/proxmox-inventory && npm run collect`
+2. Navigate to Settings → Integrations → Proxmox Import
+3. Upload JSON file and follow the import workflow
+
 ## Changelog
+
+### v0.2.0 - Proxmox Import Integration
+
+- Proxmox inventory import with preview
+- Import source and mapping tracking
+- Import history and audit trail
+- Conflict detection and resolution
+- Field ownership protection
+- External resource mapping
 
 ### v0.1.0 - Phase 1 Complete
 

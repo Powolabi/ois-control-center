@@ -171,6 +171,8 @@ model System {
   endpoints        Endpoint[]
   auditEvents      AuditEvent[]
   externalMappings ExternalResourceMapping[]
+  monitors         Monitor[]
+  incidents        Incident[]
 
   @@index([locationId])
   @@index([parentSystemId])
@@ -259,6 +261,17 @@ enum AuditAction {
   IMPORT_SYSTEM_UPDATED
   IMPORT_MAPPING_CREATED
   IMPORT_CONFLICT_RESOLVED
+  MONITOR_CREATED
+  MONITOR_UPDATED
+  MONITOR_ENABLED
+  MONITOR_DISABLED
+  MONITOR_ARCHIVED
+  MANUAL_CHECK_REQUESTED
+  INCIDENT_OPENED
+  INCIDENT_ACKNOWLEDGED
+  INCIDENT_RESOLVED
+  HEARTBEAT_TOKEN_CREATED
+  HEARTBEAT_TOKEN_ROTATED
 }
 
 model AuditEvent {
@@ -366,4 +379,161 @@ model ImportRun {
   @@index([status])
   @@index([startedAt])
   @@map("import_runs")
+}
+
+enum HealthStatus {
+  HEALTHY
+  DEGRADED
+  DOWN
+  PAUSED
+  UNKNOWN
+}
+
+enum CheckType {
+  HTTP
+  TCP
+  HEARTBEAT
+}
+
+model Monitor {
+  id                   String       @id @default(cuid())
+  name                 String
+  checkType            CheckType
+  enabled              Boolean      @default(true)
+  intervalSeconds      Int          @default(60)
+  timeoutMs            Int          @default(10000)
+  failureThreshold     Int          @default(3)
+  recoveryThreshold    Int          @default(2)
+  nextCheckAt          DateTime?
+  lastCheckedAt        DateTime?
+  currentHealth        HealthStatus @default(UNKNOWN)
+  consecutiveFailures  Int          @default(0)
+  consecutiveSuccesses Int          @default(0)
+  workerLeaseOwner     String?
+  workerLeaseExpiry    DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  archivedAt           DateTime?
+
+  systemId String
+  system   System @relation(fields: [systemId], references: [id], onDelete: Cascade)
+
+  httpConfig      HttpCheckConfig?
+  tcpConfig       TcpCheckConfig?
+  heartbeatConfig HeartbeatCheckConfig?
+  checkResults    CheckResult[]
+  incidents       Incident[]
+
+  @@index([systemId])
+  @@index([enabled])
+  @@index([currentHealth])
+  @@index([nextCheckAt])
+  @@index([workerLeaseExpiry])
+  @@map("monitors")
+}
+
+model HttpCheckConfig {
+  id                String   @id @default(cuid())
+  url               String
+  method            String   @default("GET")
+  expectedStatusMin Int      @default(200)
+  expectedStatusMax Int      @default(299)
+  followRedirects   Boolean  @default(true)
+  maxRedirects      Int      @default(5)
+  validateTls       Boolean  @default(true)
+  expectedText      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  monitorId String  @unique
+  monitor   Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@map("http_check_configs")
+}
+
+model TcpCheckConfig {
+  id        String   @id @default(cuid())
+  host      String
+  port      Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  monitorId String  @unique
+  monitor   Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@map("tcp_check_configs")
+}
+
+model HeartbeatCheckConfig {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  lastSeenAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  monitorId String  @unique
+  monitor   Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@map("heartbeat_check_configs")
+}
+
+model CheckResult {
+  id               String       @id @default(cuid())
+  startedAt        DateTime
+  completedAt      DateTime?
+  success          Boolean
+  healthResult     HealthStatus
+  responseTimeMs   Int?
+  httpStatus       Int?
+  errorCode        String?
+  errorSummary     String?      @db.Text
+  workerIdentifier String?
+  createdAt        DateTime     @default(now())
+
+  monitorId String
+  monitor   Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  incidentsOpened   Incident[] @relation("IncidentFirstFailure")
+  incidentsResolved Incident[] @relation("IncidentRecovery")
+
+  @@index([monitorId])
+  @@index([createdAt])
+  @@index([success])
+  @@map("check_results")
+}
+
+enum IncidentStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model Incident {
+  id             String         @id @default(cuid())
+  status         IncidentStatus @default(OPEN)
+  failureSummary String         @db.Text
+  openedAt       DateTime       @default(now())
+  acknowledgedAt DateTime?
+  resolvedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  monitorId String
+  monitor   Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  systemId String
+  system   System @relation(fields: [systemId], references: [id], onDelete: Cascade)
+
+  firstFailedResultId String
+  firstFailedResult   CheckResult @relation("IncidentFirstFailure", fields: [firstFailedResultId], references: [id])
+
+  recoveryResultId String?
+  recoveryResult   CheckResult? @relation("IncidentRecovery", fields: [recoveryResultId], references: [id])
+
+  @@index([monitorId])
+  @@index([systemId])
+  @@index([status])
+  @@index([openedAt])
+  @@map("incidents")
 }

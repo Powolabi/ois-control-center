@@ -4,9 +4,15 @@ A private internal control plane for managing infrastructure systems at Owolabi 
 
 ## Product Vision
 
-OIS Control Center provides a centralized, searchable source of truth for infrastructure inventory. Track what systems exist, where they're located, how they're connected, and what dependencies exist between them.
+OIS Control Center provides a centralized, searchable source of truth for infrastructure inventory with active health monitoring. Track what systems exist, where they're located, how they're connected, what dependencies exist between them, and monitor their health in real-time.
 
-## Phase 1: System Inventory (Current)
+## Current Status
+
+- ✅ **Phase 1**: System Inventory (Complete)
+- ✅ **Phase 2**: Read-Only Health Monitoring (Complete)
+- ⏳ **Phase 3**: Advanced Monitoring & Notifications (Planned)
+
+## Phase 1: System Inventory
 
 Phase 1 provides:
 
@@ -19,14 +25,39 @@ Phase 1 provides:
 - **Status & Criticality**: Monitor system health and importance
 - **Secure Authentication**: Owner-only access with protected routes
 
-### What Phase 1 Does NOT Include
+## Phase 2: Read-Only Health Monitoring
 
-- Monitoring or alerting
-- Automatic system discovery
+Phase 2 adds active health monitoring:
+
+- **HTTP/HTTPS Checks**: Monitor web services and APIs
+- **TCP Connection Checks**: Verify port accessibility  
+- **Heartbeat Checks**: External processes report health
+- **Health States**: HEALTHY, DEGRADED, DOWN, PAUSED, UNKNOWN
+- **Incident Management**: Automatic incident opening and resolution
+- **Background Worker**: Separate process for check execution
+- **SSRF Protection**: Comprehensive security controls
+- **Result History**: Stored check results with configurable retention
+- **Audit Logging**: All monitoring operations logged
+
+### Monitoring Architecture
+
+- **Web Application**: Manage monitors and view results
+- **Background Worker**: PostgreSQL-based job scheduler with atomic claiming
+- **Separate Process**: Monitoring continues without open browser
+- **Concurrent Safe**: Multiple workers can run simultaneously
+- **Graceful Shutdown**: Worker completes active checks before stopping
+
+See [docs/MONITORING.md](docs/MONITORING.md) for complete documentation.
+
+### What Phase 2 Does NOT Include
+
+- Email, SMS, or Slack notifications
+- Automatic remediation or restarts
 - SSH execution or remote commands
-- Proxmox API integration
-- Restart controls or automation
-- AI features
+- Custom HTTP authentication
+- ICMP ping checks
+- Proxmox VM control
+- AI diagnosis
 
 ## Technology Stack
 
@@ -147,6 +178,16 @@ npm run dev
 
 Access the application at [http://localhost:3000](http://localhost:3000)
 
+### Start the Monitoring Worker
+
+In a separate terminal:
+
+```bash
+npm run monitor:worker
+```
+
+The worker will poll for due checks and execute them in the background.
+
 ### Other Commands
 
 ```bash
@@ -165,6 +206,10 @@ npm run prisma:validate
 
 # Open Prisma Studio (database GUI)
 npm run prisma:studio
+
+# Clean up old check results
+npm run monitor:cleanup -- --dry-run  # Preview
+npm run monitor:cleanup                # Execute
 ```
 
 ## Production Build
@@ -370,15 +415,19 @@ ois-control-center/
 - No system templates
 - No API documentation UI
 
-## Planned Phase 2: Read-Only Proxmox Integration
+## Planned Phase 3: Advanced Monitoring & Notifications
 
 Future capabilities:
 
-- View Proxmox VMs and containers
-- Display resource usage
-- Show VM status and uptime
-- Link Proxmox entities to inventory systems
-- **Still read-only**: no start/stop/restart controls
+- Notification channels (Email, SMS, Slack, webhooks)
+- Multi-region monitoring
+- Worker health dashboard
+- Advanced HTTP authentication (Bearer tokens, Basic auth)
+- Custom check scripts (sandboxed execution)
+- Prometheus metrics export
+- Grafana integration
+- SLA tracking and reporting
+- Automatic ticket creation
 
 ## License
 

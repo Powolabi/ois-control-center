@@ -1,0 +1,122 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-09-11T15:30:00.000Z",
+  "source": {
+    "type": "PROXMOX",
+    "name": "test-cluster",
+    "version": "8.1.3"
+  },
+  "systems": [
+    {
+      "externalId": "proxmox:node:pve-node-1",
+      "name": "pve-node-1",
+      "type": "PROXMOX_HOST",
+      "status": "ONLINE",
+      "hostname": "pve-node-1",
+      "description": null,
+      "platform": "Proxmox",
+      "platformVersion": null,
+      "vmId": null,
+      "nodeName": null,
+      "cpuAllocated": 8,
+      "cpuUsagePercent": 15.0,
+      "memoryAllocatedBytes": 16777216000,
+      "memoryUsedBytes": 8388608000,
+      "storageAllocatedBytes": null,
+      "storageUsedBytes": null,
+      "metadata": {
+        "type": "node",
+        "uptime": 864000
+      }
+    },
+    {
+      "externalId": "proxmox:vm:pve-node-1:101",
+      "name": "web-server",
+      "type": "VIRTUAL_MACHINE",
+      "status": "ONLINE",
+      "hostname": null,
+      "description": null,
+      "platform": "Proxmox",
+      "platformVersion": null,
+      "vmId": 101,
+      "nodeName": "pve-node-1",
+      "cpuAllocated": 2,
+      "cpuUsagePercent": 5.0,
+      "memoryAllocatedBytes": 4294967296,
+      "memoryUsedBytes": 2147483648,
+      "storageAllocatedBytes": 53687091200,
+      "storageUsedBytes": 10737418240,
+      "metadata": {
+        "type": "qemu",
+        "template": false,
+        "uptime": 432000
+      }
+    },
+    {
+      "externalId": "proxmox:lxc:pve-node-1:201",
+      "name": "database-ct",
+      "type": "CONTAINER",
+      "status": "ONLINE",
+      "hostname": null,
+      "description": null,
+      "platform": "Proxmox",
+      "platformVersion": null,
+      "vmId": 201,
+      "nodeName": "pve-node-1",
+      "cpuAllocated": 4,
+      "cpuUsagePercent": 25.0,
+      "memoryAllocatedBytes": 8589934592,
+      "memoryUsedBytes": 6442450944,
+      "storageAllocatedBytes": 107374182400,
+      "storageUsedBytes": 32212254720,
+      "metadata": {
+        "type": "lxc",
+        "template": false,
+        "uptime": 86400
+      }
+    },
+    {
+      "externalId": "proxmox:storage:pve-node-1:local-lvm",
+      "name": "local-lvm",
+      "type": "STORAGE",
+      "status": "ONLINE",
+      "hostname": null,
+      "description": "lvmthin",
+      "platform": "Proxmox",
+      "platformVersion": null,
+      "vmId": null,
+      "nodeName": "pve-node-1",
+      "cpuAllocated": null,
+      "cpuUsagePercent": null,
+      "memoryAllocatedBytes": null,
+      "memoryUsedBytes": null,
+      "storageAllocatedBytes": 536870912000,
+      "storageUsedBytes": 214748364800,
+      "metadata": {
+        "type": "lvmthin",
+        "content": "images,rootdir",
+        "shared": false,
+        "enabled": true,
+        "available": 322122547200
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "sourceExternalId": "proxmox:vm:pve-node-1:101",
+      "targetExternalId": "proxmox:node:pve-node-1",
+      "type": "HOSTED_ON"
+    },
+    {
+      "sourceExternalId": "proxmox:lxc:pve-node-1:201",
+      "targetExternalId": "proxmox:node:pve-node-1",
+      "type": "HOSTED_ON"
+    },
+    {
+      "sourceExternalId": "proxmox:storage:pve-node-1:local-lvm",
+      "targetExternalId": "proxmox:node:pve-node-1",
+      "type": "ATTACHED_TO"
+    }
+  ],
+  "warnings": []
+}

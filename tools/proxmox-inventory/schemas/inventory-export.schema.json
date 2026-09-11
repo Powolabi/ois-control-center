@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Proxmox Inventory Export",
+  "description": "Normalized inventory export from Proxmox VE infrastructure",
+  "type": "object",
+  "required": ["schemaVersion", "generatedAt", "source", "systems", "relationships", "warnings"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Schema version in format 'major.minor'"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when inventory was generated"
+    },
+    "source": {
+      "type": "object",
+      "required": ["type", "name"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["PROXMOX"],
+          "description": "Source system type"
+        },
+        "name": {
+          "type": "string",
+          "description": "Safe source name (redacted)"
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "Proxmox VE version if available"
+        }
+      }
+    },
+    "systems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["externalId", "name", "type", "status", "platform"],
+        "properties": {
+          "externalId": {
+            "type": "string",
+            "description": "Stable unique identifier derived from Proxmox"
+          },
+          "name": {
+            "type": "string",
+            "description": "System name"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["PROXMOX_HOST", "VIRTUAL_MACHINE", "CONTAINER", "STORAGE"],
+            "description": "System type"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ONLINE", "OFFLINE", "WARNING", "UNKNOWN"],
+            "description": "Current status"
+          },
+          "hostname": {
+            "type": ["string", "null"],
+            "description": "Hostname if available"
+          },
+          "description": {
+            "type": ["string", "null"],
+            "description": "System description if available"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform identifier"
+          },
+          "platformVersion": {
+            "type": ["string", "null"],
+            "description": "Platform version if available"
+          },
+          "vmId": {
+            "type": ["number", "null"],
+            "description": "Proxmox VMID for VMs and containers"
+          },
+          "nodeName": {
+            "type": ["string", "null"],
+            "description": "Parent Proxmox node name"
+          },
+          "cpuAllocated": {
+            "type": ["number", "null"],
+            "description": "Allocated CPU cores/sockets"
+          },
+          "cpuUsagePercent": {
+            "type": ["number", "null"],
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Current CPU usage percentage"
+          },
+          "memoryAllocatedBytes": {
+            "type": ["number", "null"],
+            "minimum": 0,
+            "description": "Allocated memory in bytes"
+          },
+          "memoryUsedBytes": {
+            "type": ["number", "null"],
+            "minimum": 0,
+            "description": "Used memory in bytes"
+          },
+          "storageAllocatedBytes": {
+            "type": ["number", "null"],
+            "minimum": 0,
+            "description": "Allocated storage in bytes"
+          },
+          "storageUsedBytes": {
+            "type": ["number", "null"],
+            "minimum": 0,
+            "description": "Used storage in bytes"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Vendor-specific metadata",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sourceExternalId", "targetExternalId", "type"],
+        "properties": {
+          "sourceExternalId": {
+            "type": "string",
+            "description": "Source system external ID (child)"
+          },
+          "targetExternalId": {
+            "type": "string",
+            "description": "Target system external ID (parent)"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["HOSTED_ON", "ATTACHED_TO"],
+            "description": "Relationship type"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["message", "context"],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Warning message"
+          },
+          "context": {
+            "type": "string",
+            "description": "Context where warning occurred"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH"],
+            "description": "Warning severity"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -36,7 +36,7 @@ export default async function ImportsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {history.map((run) => (
+          {history.map((run: any) => (
             <Link
               key={run.id}
               href={`/dashboard/settings/imports/${run.id}`}

@@ -16,6 +16,8 @@
     "prisma:validate": "prisma validate",
     "db:seed": "tsx prisma/seed.ts",
     "db:bootstrap": "tsx scripts/bootstrap-owner.ts",
+    "monitor:worker": "tsx scripts/monitor-worker.ts",
+    "monitor:cleanup": "tsx scripts/monitor-cleanup.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

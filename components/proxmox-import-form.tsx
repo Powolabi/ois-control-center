@@ -160,6 +160,14 @@ export function ProxmoxImportForm({ locations }: ProxmoxImportFormProps) {
         throw new Error(data.error || "Failed to execute import")
       }
 
+      if (data.status === "FAILED") {
+        throw new Error(
+          (data.errors && data.errors.length > 0
+            ? data.errors.join("; ")
+            : "Import failed")
+        )
+      }
+
       setResult(data)
       setStep("results")
     } catch (err: any) {

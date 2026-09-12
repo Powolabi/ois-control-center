@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { AuditAction } from "@prisma/client"
+import { AuditAction, Prisma } from "@prisma/client"
 
 interface CreateAuditEventParams {
   action: AuditAction
@@ -7,6 +7,7 @@ interface CreateAuditEventParams {
   userId?: string
   systemId?: string
   metadata?: Record<string, any>
+  client?: Prisma.TransactionClient | typeof prisma
 }
 
 export async function createAuditEvent({
@@ -15,10 +16,11 @@ export async function createAuditEvent({
   userId,
   systemId,
   metadata,
+  client = prisma,
 }: CreateAuditEventParams) {
   const safeMetadata = metadata ? sanitizeMetadata(metadata) : undefined
 
-  return prisma.auditEvent.create({
+  return client.auditEvent.create({
     data: {
       action,
       entityId,

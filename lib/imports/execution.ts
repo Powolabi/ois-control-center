@@ -101,6 +101,7 @@ export async function executeImport(
               entityId: system.id,
               userId,
               systemId: system.id,
+              client: tx,
               metadata: {
                 importRunId,
                 externalId: normalized.externalId,
@@ -135,6 +136,7 @@ export async function executeImport(
               entityId: resolution.systemId,
               userId,
               systemId: resolution.systemId,
+              client: tx,
               metadata: {
                 importRunId,
                 externalId: normalized.externalId,
@@ -168,6 +170,7 @@ export async function executeImport(
             entityId: system.id,
             userId,
             systemId: system.id,
+            client: tx,
             metadata: {
               importRunId,
               externalId: normalized.externalId,
@@ -206,6 +209,7 @@ export async function executeImport(
             entityId: match.existingSystemId,
             userId,
             systemId: match.existingSystemId,
+            client: tx,
             metadata: {
               importRunId,
               externalId: normalized.externalId,
